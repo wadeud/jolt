@@ -1,4 +1,6 @@
-use crate::subprotocols::grand_product::{BatchedGrandProduct, ToggledBatchedGrandProduct};
+use crate::subprotocols::grand_product::{
+    BatchedDenseGrandProduct, BatchedGrandProduct, ToggledBatchedGrandProduct,
+};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use itertools::{interleave, Itertools};
 use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
@@ -9,7 +11,7 @@ use tracing::trace_span;
 use crate::field::JoltField;
 use crate::jolt::instruction::{JoltInstructionSet, SubtableIndices};
 use crate::jolt::subtable::JoltSubtableSet;
-use crate::lasso::memory_checking::MultisetHashes;
+use crate::lasso::memory_checking::{MultisetHashes, NoPreprocessing};
 use crate::poly::commitment::commitment_scheme::{BatchType, CommitShape, CommitmentScheme};
 use crate::utils::mul_0_1_optimized;
 use crate::{
@@ -138,6 +140,7 @@ where
     F: JoltField,
     C: CommitmentScheme<Field = F>,
 {
+    type Preprocessing = NoPreprocessing;
     type Proof = C::BatchedProof;
 
     fn open(_polynomials: &InstructionPolynomials<F, C>, _opening_point: &[F]) -> Self {
@@ -226,6 +229,7 @@ where
     F: JoltField,
     C: CommitmentScheme<Field = F>,
 {
+    type Preprocessing = NoPreprocessing;
     type Proof = C::BatchedProof;
 
     #[tracing::instrument(skip_all, name = "InstructionReadWriteOpenings::open")]
@@ -426,6 +430,7 @@ where
     InstructionSet: JoltInstructionSet,
     Subtables: JoltSubtableSet<F>,
 {
+    type InitFinalGrandProduct = BatchedDenseGrandProduct<F>;
     type ReadWriteGrandProduct = ToggledBatchedGrandProduct<F>;
     type Preprocessing = InstructionLookupsPreprocessing<F>;
     type ReadWriteOpenings = InstructionReadWriteOpenings<F>;

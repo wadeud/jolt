@@ -2,10 +2,7 @@ use crate::field::JoltField;
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 
 use super::commitment::commitment_scheme::CommitmentScheme;
-use crate::{
-    lasso::memory_checking::NoPreprocessing,
-    utils::{errors::ProofVerifyError, transcript::ProofTranscript},
-};
+use crate::utils::{errors::ProofVerifyError, transcript::ProofTranscript};
 
 /// Encapsulates the pattern of a collection of related polynomials (e.g. those used to
 /// prove instruction lookups in Jolt) that can be "batched" for more efficient
@@ -29,7 +26,7 @@ where
     C: CommitmentScheme<Field = F>,
     Polynomials: StructuredCommitment<C> + ?Sized,
 {
-    type Preprocessing = NoPreprocessing;
+    type Preprocessing;
     type Proof: Sync + CanonicalSerialize + CanonicalDeserialize;
 
     /// Evaluates each of the given `polynomials` at the given `opening_point`.

@@ -1,275 +1,277 @@
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
-use ark_std::{One, Zero};
-use binius_field::{BinaryField128b, BinaryField128bPolyval};
-use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
+// Binius implementation requires nightly
 
-use super::{FieldOps, JoltField};
+// use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+// use ark_std::{One, Zero};
+// use binius_field::{BinaryField128b, BinaryField128bPolyval};
+// use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
 
-impl BiniusConstructable for BinaryField128b {
-    fn new(n: u64) -> Self {
-        Self::new(n as u128)
-    }
-}
+// use super::{FieldOps, JoltField};
 
-impl BiniusConstructable for BinaryField128bPolyval {
-    fn new(n: u64) -> Self {
-        Self::new(n as u128)
-    }
-}
+// impl BiniusConstructable for BinaryField128b {
+//     fn new(n: u64) -> Self {
+//         Self::new(n as u128)
+//     }
+// }
 
-impl BiniusSpecific for BinaryField128b {}
-impl BiniusSpecific for BinaryField128bPolyval {}
+// impl BiniusConstructable for BinaryField128bPolyval {
+//     fn new(n: u64) -> Self {
+//         Self::new(n as u128)
+//     }
+// }
 
-/// Trait for BiniusField functionality specific to each impl.
-pub trait BiniusSpecific: binius_field::TowerField + BiniusConstructable + bytemuck::Pod {}
+// impl BiniusSpecific for BinaryField128b {}
+// impl BiniusSpecific for BinaryField128bPolyval {}
 
-pub trait BiniusConstructable {
-    fn new(n: u64) -> Self;
-}
+// /// Trait for BiniusField functionality specific to each impl.
+// pub trait BiniusSpecific: binius_field::TowerField + BiniusConstructable + bytemuck::Pod {}
 
-#[derive(Default, Debug, Copy, Clone, Eq, PartialEq)]
-pub struct BiniusField<F: BiniusSpecific>(F);
+// pub trait BiniusConstructable {
+//     fn new(n: u64) -> Self;
+// }
 
-impl<F: BiniusSpecific> FieldOps for BiniusField<F> {}
-impl<'a, 'b, F: BiniusSpecific> FieldOps<&'b BiniusField<F>, BiniusField<F>>
-    for &'a BiniusField<F>
-{
-}
-impl<'b, F: BiniusSpecific> FieldOps<&'b BiniusField<F>, BiniusField<F>> for BiniusField<F> {}
+// #[derive(Default, Debug, Copy, Clone, Eq, PartialEq)]
+// pub struct BiniusField<F: BiniusSpecific>(F);
 
-impl<'a, 'b, F: BiniusSpecific> Add<&'b BiniusField<F>> for &'a BiniusField<F> {
-    type Output = BiniusField<F>;
+// impl<F: BiniusSpecific> FieldOps for BiniusField<F> {}
+// impl<'a, 'b, F: BiniusSpecific> FieldOps<&'b BiniusField<F>, BiniusField<F>>
+//     for &'a BiniusField<F>
+// {
+// }
+// impl<'b, F: BiniusSpecific> FieldOps<&'b BiniusField<F>, BiniusField<F>> for BiniusField<F> {}
 
-    fn add(self, other: &'b BiniusField<F>) -> BiniusField<F> {
-        *self + other
-    }
-}
+// impl<'a, 'b, F: BiniusSpecific> Add<&'b BiniusField<F>> for &'a BiniusField<F> {
+//     type Output = BiniusField<F>;
 
-impl<'a, 'b, F: BiniusSpecific> Sub<&'b BiniusField<F>> for &'a BiniusField<F> {
-    type Output = BiniusField<F>;
+//     fn add(self, other: &'b BiniusField<F>) -> BiniusField<F> {
+//         *self + other
+//     }
+// }
 
-    fn sub(self, other: &'b BiniusField<F>) -> BiniusField<F> {
-        *self - other
-    }
-}
+// impl<'a, 'b, F: BiniusSpecific> Sub<&'b BiniusField<F>> for &'a BiniusField<F> {
+//     type Output = BiniusField<F>;
 
-impl<'a, 'b, F: BiniusSpecific> Mul<&'b BiniusField<F>> for &'a BiniusField<F> {
-    type Output = BiniusField<F>;
+//     fn sub(self, other: &'b BiniusField<F>) -> BiniusField<F> {
+//         *self - other
+//     }
+// }
 
-    fn mul(self, other: &'b BiniusField<F>) -> BiniusField<F> {
-        *self * other
-    }
-}
+// impl<'a, 'b, F: BiniusSpecific> Mul<&'b BiniusField<F>> for &'a BiniusField<F> {
+//     type Output = BiniusField<F>;
 
-impl<'a, 'b, F: BiniusSpecific> Div<&'b BiniusField<F>> for &'a BiniusField<F> {
-    type Output = BiniusField<F>;
+//     fn mul(self, other: &'b BiniusField<F>) -> BiniusField<F> {
+//         *self * other
+//     }
+// }
 
-    fn div(self, other: &'b BiniusField<F>) -> BiniusField<F> {
-        *self / other
-    }
-}
+// impl<'a, 'b, F: BiniusSpecific> Div<&'b BiniusField<F>> for &'a BiniusField<F> {
+//     type Output = BiniusField<F>;
 
-impl<'b, F: BiniusSpecific> Add<&'b BiniusField<F>> for BiniusField<F> {
-    type Output = BiniusField<F>;
+//     fn div(self, other: &'b BiniusField<F>) -> BiniusField<F> {
+//         *self / other
+//     }
+// }
 
-    fn add(self, other: &'b BiniusField<F>) -> BiniusField<F> {
-        BiniusField(self.0 + other.0)
-    }
-}
+// impl<'b, F: BiniusSpecific> Add<&'b BiniusField<F>> for BiniusField<F> {
+//     type Output = BiniusField<F>;
 
-impl<'b, F: BiniusSpecific> Sub<&'b BiniusField<F>> for BiniusField<F> {
-    type Output = BiniusField<F>;
+//     fn add(self, other: &'b BiniusField<F>) -> BiniusField<F> {
+//         BiniusField(self.0 + other.0)
+//     }
+// }
 
-    fn sub(self, other: &'b BiniusField<F>) -> BiniusField<F> {
-        BiniusField(self.0 - other.0)
-    }
-}
+// impl<'b, F: BiniusSpecific> Sub<&'b BiniusField<F>> for BiniusField<F> {
+//     type Output = BiniusField<F>;
 
-impl<'b, F: BiniusSpecific> Mul<&'b BiniusField<F>> for BiniusField<F> {
-    type Output = BiniusField<F>;
+//     fn sub(self, other: &'b BiniusField<F>) -> BiniusField<F> {
+//         BiniusField(self.0 - other.0)
+//     }
+// }
 
-    fn mul(self, other: &'b BiniusField<F>) -> BiniusField<F> {
-        BiniusField(self.0 * other.0)
-    }
-}
+// impl<'b, F: BiniusSpecific> Mul<&'b BiniusField<F>> for BiniusField<F> {
+//     type Output = BiniusField<F>;
 
-impl<'b, F: BiniusSpecific> Div<&'b BiniusField<F>> for BiniusField<F> {
-    type Output = BiniusField<F>;
+//     fn mul(self, other: &'b BiniusField<F>) -> BiniusField<F> {
+//         BiniusField(self.0 * other.0)
+//     }
+// }
 
-    fn div(self, other: &'b BiniusField<F>) -> BiniusField<F> {
-        #[allow(clippy::suspicious_arithmetic_impl)] // clippy doesn't know algebra
-        BiniusField(self.0 * other.0.invert().unwrap())
-    }
-}
+// impl<'b, F: BiniusSpecific> Div<&'b BiniusField<F>> for BiniusField<F> {
+//     type Output = BiniusField<F>;
 
-/// Wrapper for all generic BiniusField functionality.
-impl<F: BiniusSpecific> JoltField for BiniusField<F> {
-    const NUM_BYTES: usize = 16;
+//     fn div(self, other: &'b BiniusField<F>) -> BiniusField<F> {
+//         #[allow(clippy::suspicious_arithmetic_impl)] // clippy doesn't know algebra
+//         BiniusField(self.0 * other.0.invert().unwrap())
+//     }
+// }
 
-    fn random<R: rand_core::RngCore>(rng: &mut R) -> Self {
-        Self(F::random(rng))
-    }
+// /// Wrapper for all generic BiniusField functionality.
+// impl<F: BiniusSpecific> JoltField for BiniusField<F> {
+//     const NUM_BYTES: usize = 16;
 
-    fn from_u64(n: u64) -> Option<Self> {
-        Some(Self(F::new(n)))
-    }
+//     fn random<R: rand_core::RngCore>(rng: &mut R) -> Self {
+//         Self(F::random(rng))
+//     }
 
-    fn from_i64(val: i64) -> Self {
-        if val > 0 {
-            <Self as JoltField>::from_u64(val as u64).unwrap()
-        } else {
-            <Self as JoltField>::from_u64(-val as u64).unwrap()
-        }
-    }
+//     fn from_u64(n: u64) -> Option<Self> {
+//         Some(Self(F::new(n)))
+//     }
 
-    fn square(&self) -> Self {
-        Self(self.0.square())
-    }
+//     fn from_i64(val: i64) -> Self {
+//         if val > 0 {
+//             <Self as JoltField>::from_u64(val as u64).unwrap()
+//         } else {
+//             <Self as JoltField>::from_u64(-val as u64).unwrap()
+//         }
+//     }
 
-    fn inverse(&self) -> Option<Self> {
-        self.0.invert().map(Self)
-    }
+//     fn square(&self) -> Self {
+//         Self(self.0.square())
+//     }
 
-    fn from_bytes(bytes: &[u8]) -> Self {
-        assert_eq!(bytes.len(), Self::NUM_BYTES);
+//     fn inverse(&self) -> Option<Self> {
+//         self.0.invert().map(Self)
+//     }
 
-        let field_element = bytemuck::try_from_bytes::<F>(bytes).unwrap();
-        Self(field_element.to_owned())
-    }
-}
+//     fn from_bytes(bytes: &[u8]) -> Self {
+//         assert_eq!(bytes.len(), Self::NUM_BYTES);
 
-impl<F: BiniusSpecific> Zero for BiniusField<F> {
-    fn zero() -> Self {
-        Self(F::ZERO)
-    }
+//         let field_element = bytemuck::try_from_bytes::<F>(bytes).unwrap();
+//         Self(field_element.to_owned())
+//     }
+// }
 
-    fn is_zero(&self) -> bool {
-        self.0.is_zero()
-    }
-}
+// impl<F: BiniusSpecific> Zero for BiniusField<F> {
+//     fn zero() -> Self {
+//         Self(F::ZERO)
+//     }
 
-impl<F: BiniusSpecific> One for BiniusField<F> {
-    fn one() -> Self {
-        Self(F::ONE)
-    }
+//     fn is_zero(&self) -> bool {
+//         self.0.is_zero()
+//     }
+// }
 
-    fn is_one(&self) -> bool {
-        self.0 == Self::one().0
-    }
-}
+// impl<F: BiniusSpecific> One for BiniusField<F> {
+//     fn one() -> Self {
+//         Self(F::ONE)
+//     }
 
-impl<F: BiniusSpecific> Neg for BiniusField<F> {
-    type Output = Self;
+//     fn is_one(&self) -> bool {
+//         self.0 == Self::one().0
+//     }
+// }
 
-    fn neg(self) -> Self {
-        BiniusField(-self.0)
-    }
-}
+// impl<F: BiniusSpecific> Neg for BiniusField<F> {
+//     type Output = Self;
 
-impl<F: BiniusSpecific> Add for BiniusField<F> {
-    type Output = Self;
+//     fn neg(self) -> Self {
+//         BiniusField(-self.0)
+//     }
+// }
 
-    fn add(self, other: Self) -> Self {
-        BiniusField(self.0 + other.0)
-    }
-}
+// impl<F: BiniusSpecific> Add for BiniusField<F> {
+//     type Output = Self;
 
-impl<F: BiniusSpecific> Sub for BiniusField<F> {
-    type Output = Self;
+//     fn add(self, other: Self) -> Self {
+//         BiniusField(self.0 + other.0)
+//     }
+// }
 
-    fn sub(self, other: Self) -> Self {
-        BiniusField(self.0 - other.0)
-    }
-}
+// impl<F: BiniusSpecific> Sub for BiniusField<F> {
+//     type Output = Self;
 
-impl<F: BiniusSpecific> Mul for BiniusField<F> {
-    type Output = Self;
+//     fn sub(self, other: Self) -> Self {
+//         BiniusField(self.0 - other.0)
+//     }
+// }
 
-    fn mul(self, other: Self) -> Self {
-        BiniusField(self.0 * other.0)
-    }
-}
+// impl<F: BiniusSpecific> Mul for BiniusField<F> {
+//     type Output = Self;
 
-#[allow(clippy::suspicious_arithmetic_impl)]
-impl<F: BiniusSpecific> Div for BiniusField<F> {
-    type Output = Self;
+//     fn mul(self, other: Self) -> Self {
+//         BiniusField(self.0 * other.0)
+//     }
+// }
 
-    fn div(self, other: Self) -> Self {
-        Self(self.0 * other.0.invert().unwrap())
-    }
-}
+// #[allow(clippy::suspicious_arithmetic_impl)]
+// impl<F: BiniusSpecific> Div for BiniusField<F> {
+//     type Output = Self;
 
-impl<F: BiniusSpecific> AddAssign for BiniusField<F> {
-    fn add_assign(&mut self, other: Self) {
-        self.0 += other.0;
-    }
-}
+//     fn div(self, other: Self) -> Self {
+//         Self(self.0 * other.0.invert().unwrap())
+//     }
+// }
 
-impl<F: BiniusSpecific> SubAssign for BiniusField<F> {
-    fn sub_assign(&mut self, other: Self) {
-        self.0 -= other.0;
-    }
-}
+// impl<F: BiniusSpecific> AddAssign for BiniusField<F> {
+//     fn add_assign(&mut self, other: Self) {
+//         self.0 += other.0;
+//     }
+// }
 
-impl<F: BiniusSpecific> MulAssign for BiniusField<F> {
-    fn mul_assign(&mut self, other: Self) {
-        self.0 *= other.0;
-    }
-}
+// impl<F: BiniusSpecific> SubAssign for BiniusField<F> {
+//     fn sub_assign(&mut self, other: Self) {
+//         self.0 -= other.0;
+//     }
+// }
 
-impl<F: BiniusSpecific> core::iter::Sum for BiniusField<F> {
-    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.fold(Self::zero(), |acc, x| BiniusField(acc.0 + x.0))
-    }
-}
+// impl<F: BiniusSpecific> MulAssign for BiniusField<F> {
+//     fn mul_assign(&mut self, other: Self) {
+//         self.0 *= other.0;
+//     }
+// }
 
-impl<'a, F: BiniusSpecific> core::iter::Sum<&'a Self> for BiniusField<F> {
-    fn sum<I: Iterator<Item = &'a Self>>(iter: I) -> Self {
-        iter.fold(Self::zero(), |acc, x| BiniusField(acc.0 + x.0))
-    }
-}
+// impl<F: BiniusSpecific> core::iter::Sum for BiniusField<F> {
+//     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+//         iter.fold(Self::zero(), |acc, x| BiniusField(acc.0 + x.0))
+//     }
+// }
 
-impl<F: BiniusSpecific> core::iter::Product for BiniusField<F> {
-    fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.fold(Self::one(), |acc, x| BiniusField(acc.0 * x.0))
-    }
-}
+// impl<'a, F: BiniusSpecific> core::iter::Sum<&'a Self> for BiniusField<F> {
+//     fn sum<I: Iterator<Item = &'a Self>>(iter: I) -> Self {
+//         iter.fold(Self::zero(), |acc, x| BiniusField(acc.0 + x.0))
+//     }
+// }
 
-impl<'a, F: BiniusSpecific> core::iter::Product<&'a Self> for BiniusField<F> {
-    fn product<I: Iterator<Item = &'a Self>>(iter: I) -> Self {
-        iter.fold(Self::one(), |acc, x| BiniusField(acc.0 * x.0))
-    }
-}
+// impl<F: BiniusSpecific> core::iter::Product for BiniusField<F> {
+//     fn product<I: Iterator<Item = Self>>(iter: I) -> Self {
+//         iter.fold(Self::one(), |acc, x| BiniusField(acc.0 * x.0))
+//     }
+// }
 
-impl<F: BiniusSpecific> CanonicalSerialize for BiniusField<F> {
-    fn serialize_with_mode<W: ark_std::io::Write>(
-        &self,
-        mut writer: W,
-        _compress: ark_serialize::Compress,
-    ) -> Result<(), ark_serialize::SerializationError> {
-        let bytes = bytemuck::bytes_of(&self.0);
-        writer.write_all(bytes)?;
-        Ok(())
-    }
+// impl<'a, F: BiniusSpecific> core::iter::Product<&'a Self> for BiniusField<F> {
+//     fn product<I: Iterator<Item = &'a Self>>(iter: I) -> Self {
+//         iter.fold(Self::one(), |acc, x| BiniusField(acc.0 * x.0))
+//     }
+// }
 
-    fn serialized_size(&self, _compress: ark_serialize::Compress) -> usize {
-        Self::NUM_BYTES
-    }
-}
+// impl<F: BiniusSpecific> CanonicalSerialize for BiniusField<F> {
+//     fn serialize_with_mode<W: ark_std::io::Write>(
+//         &self,
+//         mut writer: W,
+//         _compress: ark_serialize::Compress,
+//     ) -> Result<(), ark_serialize::SerializationError> {
+//         let bytes = bytemuck::bytes_of(&self.0);
+//         writer.write_all(bytes)?;
+//         Ok(())
+//     }
 
-impl<F: BiniusSpecific> CanonicalDeserialize for BiniusField<F> {
-    // Required method
-    fn deserialize_with_mode<R: std::io::prelude::Read>(
-        _reader: R,
-        _compress: ark_serialize::Compress,
-        _validate: ark_serialize::Validate,
-    ) -> Result<Self, ark_serialize::SerializationError> {
-        todo!()
-    }
-}
+//     fn serialized_size(&self, _compress: ark_serialize::Compress) -> usize {
+//         Self::NUM_BYTES
+//     }
+// }
 
-impl<F: BiniusSpecific> ark_serialize::Valid for BiniusField<F> {
-    fn check(&self) -> Result<(), ark_serialize::SerializationError> {
-        todo!()
-    }
-}
+// impl<F: BiniusSpecific> CanonicalDeserialize for BiniusField<F> {
+//     // Required method
+//     fn deserialize_with_mode<R: std::io::prelude::Read>(
+//         _reader: R,
+//         _compress: ark_serialize::Compress,
+//         _validate: ark_serialize::Validate,
+//     ) -> Result<Self, ark_serialize::SerializationError> {
+//         todo!()
+//     }
+// }
+
+// impl<F: BiniusSpecific> ark_serialize::Valid for BiniusField<F> {
+//     fn check(&self) -> Result<(), ark_serialize::SerializationError> {
+//         todo!()
+//     }
+// }

@@ -1,4 +1,4 @@
-pub mod binius;
+//pub mod binius;
 pub mod commitment_scheme;
 pub mod hyperkzg;
 pub mod hyrax;

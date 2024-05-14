@@ -165,6 +165,7 @@ fn msm_bigint<V: VariableBaseMSM>(
 
                     // We right-shift by w_start, thus getting rid of the
                     // lower bits.
+                    #[allow(deprecated)]
                     scalar.divn(w_start as u32);
 
                     // We mod the remaining bits by 2^{window size}, thus taking `c` bits.

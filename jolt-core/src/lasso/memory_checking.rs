@@ -10,7 +10,7 @@ use crate::{
         structured_poly::{StructuredCommitment, StructuredOpeningProof},
     },
     subprotocols::grand_product::{
-        BatchedDenseGrandProduct, BatchedGrandProduct, BatchedGrandProductProof,
+        BatchedGrandProduct, BatchedGrandProductProof,
     },
 };
 
@@ -78,12 +78,10 @@ where
     Polynomials: StructuredCommitment<C>,
     Self: std::marker::Sync,
 {
-    type ReadWriteGrandProduct: BatchedGrandProduct<F, C> + Send + 'static =
-        BatchedDenseGrandProduct<F>;
-    type InitFinalGrandProduct: BatchedGrandProduct<F, C> + Send + 'static =
-        BatchedDenseGrandProduct<F>;
+    type ReadWriteGrandProduct: BatchedGrandProduct<F, C> + Send + 'static;
+    type InitFinalGrandProduct: BatchedGrandProduct<F, C> + Send + 'static;
 
-    type Preprocessing = NoPreprocessing;
+    type Preprocessing;
     type ReadWriteOpenings: StructuredOpeningProof<
         F,
         C,
@@ -97,7 +95,7 @@ where
         Preprocessing = Self::Preprocessing,
     >;
     /// The data associated with each memory slot. A triple (a, v, t) by default.
-    type MemoryTuple = (F, F, F);
+    type MemoryTuple;
 
     #[tracing::instrument(skip_all, name = "MemoryCheckingProver::prove_memory_checking")]
     /// Generates a memory checking proof for the given committed polynomials.

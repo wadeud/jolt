@@ -100,9 +100,9 @@ impl<F: JoltField, C: CommitmentScheme<Field = F>> BatchedGrandProduct<F, C>
     /// Each layer is mutable so that its polynomials can be bound over the course
     /// of proving.
     #[allow(unreachable_code)]
-    fn layers(&'_ mut self) -> impl Iterator<Item = &'_ mut dyn BatchedGrandProductLayer<F>> {
+    fn layers(&'_ mut self) -> Box<dyn Iterator<Item = &'_ mut dyn BatchedGrandProductLayer<F>> + '_> {
         panic!("We don't use the default prover and so we don't need the generic iterator");
-        std::iter::empty()
+        Box::new(std::iter::empty())
     }
 
     /// Computes a batched grand product proof, layer by layer.

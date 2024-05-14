@@ -12,6 +12,12 @@ pub mod profiling;
 pub mod thread;
 pub mod transcript;
 
+pub fn next_chunk<const N: usize, T: std::fmt::Debug>(
+    iter: &mut impl Iterator<Item = T>,
+) -> [T; N] {
+    iter.take(N).collect::<Vec<T>>().try_into().unwrap()
+}
+
 /// Converts an integer value to a bitvector (all values {0,1}) of field elements.
 /// Note: ordering has the MSB in the highest index. All of the following represent the integer 1:
 /// - [1]

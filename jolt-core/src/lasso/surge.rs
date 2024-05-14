@@ -1,5 +1,8 @@
 use crate::field::JoltField;
-use crate::poly::commitment::commitment_scheme::BatchType;
+use crate::{
+    poly::commitment::commitment_scheme::BatchType,
+    subprotocols::grand_product::BatchedDenseGrandProduct,
+};
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use std::marker::{PhantomData, Sync};
@@ -17,6 +20,8 @@ use crate::{
     subprotocols::sumcheck::SumcheckInstanceProof,
     utils::{errors::ProofVerifyError, math::Math, mul_0_1_optimized, transcript::ProofTranscript},
 };
+
+use super::memory_checking::NoPreprocessing;
 
 pub struct SurgePolys<F, PCS>
 where
@@ -76,6 +81,7 @@ where
     F: JoltField,
     PCS: CommitmentScheme<Field = F>,
 {
+    type Preprocessing = NoPreprocessing;
     type Proof = PCS::BatchedProof;
 
     #[tracing::instrument(skip_all, name = "PrimarySumcheckOpenings::open")]
@@ -140,6 +146,7 @@ where
     F: JoltField,
     PCS: CommitmentScheme<Field = F>,
 {
+    type Preprocessing = NoPreprocessing;
     type Proof = PCS::BatchedProof;
 
     #[tracing::instrument(skip_all, name = "SurgeReadWriteOpenings::open")]
@@ -307,6 +314,11 @@ where
     PCS: CommitmentScheme<Field = F>,
     Instruction: JoltInstruction + Default + Sync,
 {
+    type ReadWriteGrandProduct = BatchedDenseGrandProduct<F>;
+
+    type InitFinalGrandProduct = BatchedDenseGrandProduct<F>;
+
+    type MemoryTuple = (F, F, F);
     type Preprocessing = SurgePreprocessing<F, Instruction, C, M>;
     type ReadWriteOpenings = SurgeReadWriteOpenings<F>;
     type InitFinalOpenings = SurgeFinalOpenings<F, Instruction, C, M>;

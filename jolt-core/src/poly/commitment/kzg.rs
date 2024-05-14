@@ -2,9 +2,8 @@ use crate::field::JoltField;
 use crate::msm::VariableBaseMSM;
 use crate::poly::unipoly::UniPoly;
 use crate::utils::errors::ProofVerifyError;
-use ark_ec::scalar_mul::fixed_base::FixedBase;
 use ark_ec::{pairing::Pairing, AffineRepr, CurveGroup};
-use ark_ff::PrimeField;
+use ark_ec::scalar_mul::{ScalarMul, BatchMulPreprocessing};
 use ark_std::{One, UniformRand, Zero};
 use rand_core::{CryptoRng, RngCore};
 use std::marker::PhantomData;
@@ -33,23 +32,16 @@ impl<P: Pairing> SRS<P> {
             })
             .collect();
 
-        let window_size = FixedBase::get_mul_window_size(max_degree);
-        let scalar_bits = P::ScalarField::MODULUS_BIT_SIZE as usize;
-
-        let (g1_powers_projective, g2_powers_projective) = rayon::join(
-            || {
-                let g1_table = FixedBase::get_window_table(scalar_bits, window_size, g1);
-                FixedBase::msm(scalar_bits, window_size, &g1_table, &beta_powers)
-            },
-            || {
-                let g2_table = FixedBase::get_window_table(scalar_bits, window_size, g2);
-                FixedBase::msm(scalar_bits, window_size, &g2_table, &beta_powers)
-            },
-        );
+        let g1_preprocess = BatchMulPreprocessing::new(g1, max_degree);
+        let g2_preprocess = BatchMulPreprocessing::new(g2, max_degree);
 
         let (g1_powers, g2_powers) = rayon::join(
-            || P::G1::normalize_batch(&g1_powers_projective),
-            || P::G2::normalize_batch(&g2_powers_projective),
+            || {
+                ScalarMul::batch_mul_with_preprocessing(&g1_preprocess, &beta_powers)
+            },
+            || {
+                ScalarMul::batch_mul_with_preprocessing(&g2_preprocess, &beta_powers)
+            },
         );
 
         Self {

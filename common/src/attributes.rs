@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 use syn::{Lit, Meta, MetaNameValue, NestedMeta};
+use serde::{Serialize, Deserialize};
 
 use crate::constants::{
     DEFAULT_MAX_INPUT_SIZE, DEFAULT_MAX_OUTPUT_SIZE, DEFAULT_MEMORY_SIZE, DEFAULT_STACK_SIZE,
 };
 
+#[derive(Serialize, Deserialize)]
 pub struct Attributes {
     pub wasm: bool,
     pub memory_size: u64,

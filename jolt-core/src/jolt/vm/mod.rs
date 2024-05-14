@@ -315,7 +315,7 @@ pub trait Jolt<F: JoltField, PCS: CommitmentScheme<Field = F>, const C: usize, c
     ) {
         let trace_length = trace.len();
         let padded_trace_length = trace_length.next_power_of_two();
-        println!("Trace length: {}", trace_length);
+        // println!("Trace length: {}", trace_length);
 
         JoltTraceStep::pad(&mut trace);
 
