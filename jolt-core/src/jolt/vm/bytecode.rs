@@ -1,4 +1,6 @@
+use crate::lasso::memory_checking::NoPreprocessing;
 use crate::poly::field::JoltField;
+use crate::subprotocols::grand_product::BatchedDenseGrandProduct;
 use rand::rngs::StdRng;
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
@@ -369,6 +371,9 @@ where
     F: JoltField,
     C: CommitmentScheme<Field = F>,
 {
+    type ReadWriteGrandProduct = BatchedDenseGrandProduct<F>;
+
+    type InitFinalGrandProduct = BatchedDenseGrandProduct<F>;
     type Preprocessing = BytecodePreprocessing<F>;
     type ReadWriteOpenings = BytecodeReadWriteOpenings<F>;
     type InitFinalOpenings = BytecodeInitFinalOpenings<F>;
@@ -568,6 +573,7 @@ where
     F: JoltField,
     C: CommitmentScheme<Field = F>,
 {
+    type Preprocessing = NoPreprocessing;
     type Proof = C::BatchedProof;
 
     #[tracing::instrument(skip_all, name = "BytecodeReadWriteOpenings::open")]

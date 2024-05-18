@@ -1,4 +1,5 @@
 use crate::poly::field::JoltField;
+use crate::subprotocols::grand_product::BatchedDenseGrandProduct;
 use rand::rngs::StdRng;
 use rand::RngCore;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
@@ -20,7 +21,9 @@ use crate::{
         structured_poly::StructuredOpeningProof,
     },
     subprotocols::sumcheck::SumcheckInstanceProof,
-    utils::{errors::ProofVerifyError, math::Math, mul_0_optimized, transcript::ProofTranscript},
+    utils::{
+        self, errors::ProofVerifyError, math::Math, mul_0_optimized, transcript::ProofTranscript,
+    },
 };
 use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use common::constants::{
@@ -1022,6 +1025,7 @@ where
     /// Evaluation of the t_write_ram polynomial at the opening point.
     pub t_write_ram_opening: [F; 4],
     pub identity_poly_opening: Option<F>,
+    pub _commitment_scheme: PhantomData<C>,
 }
 
 impl<F, C> StructuredOpeningProof<F, C, JoltPolynomials<F, C>> for MemoryReadWriteOpenings<F, C>
@@ -1029,6 +1033,7 @@ where
     F: JoltField,
     C: CommitmentScheme<Field = F>,
 {
+    type Preprocessing = NoPreprocessing;
     type Proof = C::BatchedProof;
 
     #[tracing::instrument(skip_all, name = "MemoryReadWriteOpenings::open")]
@@ -1050,11 +1055,11 @@ where
         .collect::<Vec<F>>()
         .into_iter();
 
-        let a_read_write_opening = openings.next_chunk().unwrap();
-        let v_read_opening = openings.next_chunk().unwrap();
-        let v_write_opening = openings.next_chunk().unwrap();
-        let t_read_opening = openings.next_chunk().unwrap();
-        let t_write_ram_opening = openings.next_chunk().unwrap();
+        let a_read_write_opening = utils::next_chunk(&mut openings);
+        let v_read_opening = utils::next_chunk(&mut openings);
+        let v_write_opening = utils::next_chunk(&mut openings);
+        let t_read_opening = utils::next_chunk(&mut openings);
+        let t_write_ram_opening = utils::next_chunk(&mut openings);
 
         Self {
             a_read_write_opening,
@@ -1063,6 +1068,7 @@ where
             t_read_opening,
             t_write_ram_opening,
             identity_poly_opening: None,
+            _commitment_scheme: PhantomData,
         }
     }
 
@@ -1271,6 +1277,10 @@ where
     F: JoltField,
     C: CommitmentScheme<Field = F>,
 {
+    type ReadWriteGrandProduct = BatchedDenseGrandProduct<F>;
+
+    type InitFinalGrandProduct = BatchedDenseGrandProduct<F>;
+
     type Preprocessing = ReadWriteMemoryPreprocessing;
     type ReadWriteOpenings = MemoryReadWriteOpenings<F, C>;
     type InitFinalOpenings = MemoryInitFinalOpenings<F>;

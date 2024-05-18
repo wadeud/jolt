@@ -1,7 +1,6 @@
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::type_complexity)]
 
-use crate::subprotocols::grand_product::BatchedDenseGrandProduct;
 use crate::utils::errors::ProofVerifyError;
 use crate::utils::thread::drop_in_background_thread;
 use crate::utils::transcript::ProofTranscript;
@@ -77,12 +76,10 @@ where
     Polynomials: StructuredCommitment<C>,
     Self: std::marker::Sync,
 {
-    type ReadWriteGrandProduct: BatchedGrandProduct<F> + Send + 'static =
-        BatchedDenseGrandProduct<F>;
-    type InitFinalGrandProduct: BatchedGrandProduct<F> + Send + 'static =
-        BatchedDenseGrandProduct<F>;
+    type ReadWriteGrandProduct: BatchedGrandProduct<F> + Send + 'static;
+    type InitFinalGrandProduct: BatchedGrandProduct<F> + Send + 'static;
 
-    type Preprocessing = NoPreprocessing;
+    type Preprocessing;
     type ReadWriteOpenings: StructuredOpeningProof<
         F,
         C,
@@ -96,7 +93,7 @@ where
         Preprocessing = Self::Preprocessing,
     >;
     /// The data associated with each memory slot. A triple (a, v, t) by default.
-    type MemoryTuple = (F, F, F);
+    type MemoryTuple;
 
     #[tracing::instrument(skip_all, name = "MemoryCheckingProver::prove_memory_checking")]
     /// Generates a memory checking proof for the given committed polynomials.

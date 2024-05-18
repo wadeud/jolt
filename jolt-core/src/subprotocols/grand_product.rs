@@ -49,7 +49,7 @@ pub trait BatchedGrandProduct<F: JoltField>: Sized {
     /// Returns an iterator over the layers of this batched grand product circuit.
     /// Each layer is mutable so that its polynomials can be bound over the course
     /// of proving.
-    fn layers(&'_ mut self) -> impl Iterator<Item = &'_ mut dyn BatchedGrandProductLayer<F>>;
+    fn layers(&mut self) -> Box<dyn Iterator<Item = &'_ mut dyn BatchedGrandProductLayer<F>> + '_>;
 
     /// Computes a batched grand product proof, layer by layer.
     #[tracing::instrument(skip_all, name = "BatchedGrandProduct::prove_grand_product")]
@@ -432,11 +432,13 @@ impl<F: JoltField> BatchedGrandProduct<F> for BatchedDenseGrandProduct<F> {
             .collect()
     }
 
-    fn layers(&'_ mut self) -> impl Iterator<Item = &'_ mut dyn BatchedGrandProductLayer<F>> {
-        self.layers
-            .iter_mut()
-            .map(|layer| layer as &mut dyn BatchedGrandProductLayer<F>)
-            .rev()
+    fn layers(&mut self) -> Box<dyn Iterator<Item = &'_ mut dyn BatchedGrandProductLayer<F>> + '_> {
+        Box::new(
+            self.layers
+                .iter_mut()
+                .map(|layer| layer as &mut dyn BatchedGrandProductLayer<F>)
+                .rev(),
+        )
     }
 }
 
@@ -1441,15 +1443,17 @@ impl<F: JoltField> BatchedGrandProduct<F> for ToggledBatchedGrandProduct<F> {
             .collect()
     }
 
-    fn layers(&'_ mut self) -> impl Iterator<Item = &'_ mut dyn BatchedGrandProductLayer<F>> {
-        [&mut self.toggle_layer as &mut dyn BatchedGrandProductLayer<F>]
-            .into_iter()
-            .chain(
-                self.sparse_layers
-                    .iter_mut()
-                    .map(|layer| layer as &mut dyn BatchedGrandProductLayer<F>),
-            )
-            .rev()
+    fn layers(&mut self) -> Box<dyn Iterator<Item = &'_ mut dyn BatchedGrandProductLayer<F>> + '_> {
+        Box::new(
+            [&mut self.toggle_layer as &mut dyn BatchedGrandProductLayer<F>]
+                .into_iter()
+                .chain(
+                    self.sparse_layers
+                        .iter_mut()
+                        .map(|layer| layer as &mut dyn BatchedGrandProductLayer<F>),
+                )
+                .rev(),
+        )
     }
 
     fn verify_sumcheck_claim(

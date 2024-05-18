@@ -27,7 +27,7 @@ use crate::{
         identity_poly::IdentityPolynomial,
         structured_poly::{StructuredCommitment, StructuredOpeningProof},
     },
-    utils::{errors::ProofVerifyError, mul_0_1_optimized, transcript::ProofTranscript},
+    utils::{self, errors::ProofVerifyError, mul_0_1_optimized, transcript::ProofTranscript},
 };
 
 use super::read_write_memory::MemoryCommitment;
@@ -215,6 +215,7 @@ where
     final_cts_global_minus_read: [F; MEMORY_OPS_PER_INSTRUCTION],
     memory_t_read: [F; MEMORY_OPS_PER_INSTRUCTION],
     identity_poly_opening: Option<F>,
+    _commitment_scheme: PhantomData<C>,
 }
 
 impl<F, C> StructuredOpeningProof<F, C, RangeCheckPolynomials<F, C>> for RangeCheckOpenings<F, C>
@@ -222,6 +223,7 @@ where
     F: JoltField,
     C: CommitmentScheme<Field = F>,
 {
+    type Preprocessing = NoPreprocessing;
     type Proof = C::BatchedProof;
 
     fn open(_polynomials: &RangeCheckPolynomials<F, C>, _opening_point: &[F]) -> Self {
@@ -259,11 +261,15 @@ where
     F: JoltField,
     C: CommitmentScheme<Field = F>,
 {
+    type Preprocessing = NoPreprocessing;
     // Init/final grand products are batched together with read/write grand products
     type InitFinalGrandProduct = NoopGrandProduct;
+    type ReadWriteGrandProduct = BatchedDenseGrandProduct<F>;
 
     type ReadWriteOpenings = RangeCheckOpenings<F, C>;
     type InitFinalOpenings = RangeCheckOpenings<F, C>;
+
+    type MemoryTuple = (F, F, F);
 
     fn prove_memory_checking(
         _: &NoPreprocessing,
@@ -573,8 +579,8 @@ impl<F: JoltField> BatchedGrandProduct<F> for NoopGrandProduct {
         unimplemented!("init/final grand products are batched with read/write grand products");
     }
 
-    fn layers(&'_ mut self) -> impl Iterator<Item = &'_ mut dyn BatchedGrandProductLayer<F>> {
-        vec![].into_iter() // Needed to compile
+    fn layers(&mut self) -> Box<dyn Iterator<Item = &'_ mut dyn BatchedGrandProductLayer<F>> + '_> {
+        Box::new(std::iter::empty())
     }
 
     fn prove_grand_product(
@@ -644,11 +650,11 @@ where
 
         let mut openings = openings.into_iter();
         let read_cts_read_timestamp: [F; MEMORY_OPS_PER_INSTRUCTION] =
-            openings.next_chunk().unwrap();
-        let read_cts_global_minus_read = openings.next_chunk().unwrap();
-        let final_cts_read_timestamp = openings.next_chunk().unwrap();
-        let final_cts_global_minus_read = openings.next_chunk().unwrap();
-        let memory_t_read = openings.next_chunk().unwrap();
+            utils::next_chunk(&mut openings);
+        let read_cts_global_minus_read = utils::next_chunk(&mut openings);
+        let final_cts_read_timestamp = utils::next_chunk(&mut openings);
+        let final_cts_global_minus_read = utils::next_chunk(&mut openings);
+        let memory_t_read = utils::next_chunk(&mut openings);
 
         let openings = RangeCheckOpenings {
             read_cts_read_timestamp,
@@ -657,6 +663,7 @@ where
             final_cts_global_minus_read,
             memory_t_read,
             identity_poly_opening: None,
+            _commitment_scheme: PhantomData,
         };
 
         Self {

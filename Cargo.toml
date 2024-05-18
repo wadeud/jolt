@@ -24,6 +24,8 @@ members = [
     "jolt-core",
     "tracer",
     "common",
+]
+exclude = [
     "jolt-sdk",
     "jolt-sdk/macros",
     "examples/collatz",
@@ -46,8 +48,8 @@ members = [
     "examples/stdlib/guest",
 ]
 
-[features]
-host = ["jolt-sdk/host"]
+# [features]
+# host = ["jolt-sdk/host"]
 
 [lib]
 path = "./src/lib.rs"
@@ -62,7 +64,7 @@ eyre = "0.6.12"
 rand = "0.8.5"
 sysinfo = "0.30.8"
 
-jolt-sdk = { path = "./jolt-sdk" }
+# jolt-sdk = { path = "./jolt-sdk" }
 jolt-core = { path = "./jolt-core" }
 
 [profile.test]
