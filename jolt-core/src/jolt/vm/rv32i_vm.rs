@@ -24,15 +24,18 @@ use crate::jolt::subtable::{
 };
 use crate::poly::commitment::commitment_scheme::CommitmentScheme;
 
+// Note(slumber): modified macros do not declare enums, because enum_dispatch errors within declarative
+// macro call on stable, but not on nightly. A proper fix would look better.
+
 /// Generates an enum out of a list of JoltInstruction types. All JoltInstruction methods
 /// are callable on the enum type via enum_dispatch.
 macro_rules! instruction_set {
     ($enum_name:ident, $($alias:ident: $struct:ty),+) => {
-        #[allow(non_camel_case_types)]
-        #[repr(u8)]
-        #[derive(Copy, Clone, Debug, EnumIter, EnumCountMacro, Serialize, Deserialize)]
-        #[enum_dispatch(JoltInstruction)]
-        pub enum $enum_name { $($alias($struct)),+ }
+        // #[allow(non_camel_case_types)]
+        // #[repr(u8)]
+        // #[derive(Copy, Clone, Debug, EnumIter, EnumCountMacro, Serialize, Deserialize)]
+        // #[enum_dispatch(JoltInstruction)]
+        // pub enum $enum_name { $($alias($struct)),+ }
         impl JoltInstructionSet for $enum_name {}
         impl $enum_name {
             pub fn random_instruction(rng: &mut StdRng) -> Self {
@@ -53,11 +56,11 @@ macro_rules! instruction_set {
 /// are callable on the enum type via enum_dispatch.
 macro_rules! subtable_enum {
     ($enum_name:ident, $($alias:ident: $struct:ty),+) => {
-        #[allow(non_camel_case_types)]
-        #[repr(usize)]
-        #[enum_dispatch(LassoSubtable<F>)]
-        #[derive(EnumCountMacro, EnumIter)]
-        pub enum $enum_name<F: JoltField> { $($alias($struct)),+ }
+        // #[allow(non_camel_case_types)]
+        // #[repr(usize)]
+        // #[enum_dispatch(LassoSubtable<F>)]
+        // #[derive(EnumCountMacro, EnumIter)]
+        // pub enum $enum_name<F: JoltField> { $($alias($struct)),+ }
         impl<F: JoltField> From<SubtableId> for $enum_name<F> {
           fn from(subtable_id: SubtableId) -> Self {
             $(
@@ -79,6 +82,62 @@ macro_rules! subtable_enum {
 }
 
 const WORD_SIZE: usize = 32;
+
+#[repr(u8)]
+#[allow(non_camel_case_types)]
+#[derive(Copy, Clone, Debug, EnumIter, EnumCountMacro, Serialize, Deserialize)]
+#[enum_dispatch(JoltInstruction)]
+pub enum RV32I {
+    ADD(ADDInstruction<WORD_SIZE>),
+    SUB(SUBInstruction<WORD_SIZE>),
+    AND(ANDInstruction),
+    OR(ORInstruction),
+    XOR(XORInstruction),
+    LB(LBInstruction),
+    LH(LHInstruction),
+    SB(SBInstruction),
+    SH(SHInstruction),
+    SW(SWInstruction),
+    BEQ(BEQInstruction),
+    BGE(BGEInstruction),
+    BGEU(BGEUInstruction),
+    BNE(BNEInstruction),
+    SLT(SLTInstruction),
+    SLTU(SLTUInstruction),
+    SLL(SLLInstruction<WORD_SIZE>),
+    SRA(SRAInstruction<WORD_SIZE>),
+    SRL(SRLInstruction<WORD_SIZE>),
+}
+
+#[allow(non_camel_case_types)]
+#[repr(usize)]
+#[derive(EnumCountMacro, EnumIter)]
+#[enum_dispatch(LassoSubtable<F>)]
+pub enum RV32ISubtables<F: JoltField> {
+    AND(AndSubtable<F>),
+    EQ_ABS(EqAbsSubtable<F>),
+    EQ_MSB(EqMSBSubtable<F>),
+    EQ(EqSubtable<F>),
+    GT_MSB(GtMSBSubtable<F>),
+    IDENTITY(IdentitySubtable<F>),
+    LT_ABS(LtAbsSubtable<F>),
+    LTU(LtuSubtable<F>),
+    OR(OrSubtable<F>),
+    SIGN_EXTEND_8(SignExtendSubtable<F, 8>),
+    SIGN_EXTEND_16(SignExtendSubtable<F, 16>),
+    SLL0(SllSubtable<F, 0, WORD_SIZE>),
+    SLL1(SllSubtable<F, 1, WORD_SIZE>),
+    SLL2(SllSubtable<F, 2, WORD_SIZE>),
+    SLL3(SllSubtable<F, 3, WORD_SIZE>),
+    SRA_SIGN(SraSignSubtable<F, WORD_SIZE>),
+    SRL0(SrlSubtable<F, 0, WORD_SIZE>),
+    SRL1(SrlSubtable<F, 1, WORD_SIZE>),
+    SRL2(SrlSubtable<F, 2, WORD_SIZE>),
+    SRL3(SrlSubtable<F, 3, WORD_SIZE>),
+    TRUNCATE(TruncateOverflowSubtable<F, WORD_SIZE>),
+    TRUNCATE_BYTE(TruncateOverflowSubtable<F, 8>),
+    XOR(XorSubtable<F>),
+}
 
 instruction_set!(
   RV32I,
