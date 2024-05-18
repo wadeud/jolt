@@ -288,7 +288,7 @@ pub trait Jolt<F: JoltField, PCS: CommitmentScheme<Field = F>, const C: usize, c
     ) {
         let trace_length = instructions.len();
         let padded_trace_length = trace_length.next_power_of_two();
-        println!("Trace length: {}", trace_length);
+        // println!("Trace length: {}", trace_length);
 
         let mut transcript = ProofTranscript::new(b"Jolt transcript");
         Self::fiat_shamir_preamble(&mut transcript, &program_io, trace_length);
