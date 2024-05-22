@@ -146,10 +146,8 @@ fn display_sysinfo() {
     );
 }
 
-const RUST_TOOLCHAIN: &str = r#"[toolchain]
-channel = "nightly-2023-09-22"
-targets = ["riscv32i-unknown-none-elf"]
-"#;
+// const RUST_TOOLCHAIN: &str = include_str!("../rust-toolchain.toml");
+const RUST_TOOLCHAIN: &str = ""; // disabled
 
 const HOST_CARGO_TEMPLATE: &str = r#"[package]
 name = "{NAME}"
