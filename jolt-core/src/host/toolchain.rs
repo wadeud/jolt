@@ -1,158 +1,159 @@
-use std::{
-    fs::{self, read_to_string, File},
-    future::Future,
-    io::Write,
-    path::PathBuf,
-};
+// Fork uses stable toolchain.
 
-use dirs::home_dir;
-use eyre::{bail, eyre, Result};
-use indicatif::{ProgressBar, ProgressStyle};
-use reqwest::Client;
-use tokio::runtime::Runtime;
+// use std::{
+//     fs::{self, read_to_string, File},
+//     future::Future,
+//     io::Write,
+//     path::PathBuf,
+// };
 
-const TOOLCHAIN_TAG: &str = "nightly-3c5f0ec3f4f98a2d211061a83bade8d62c6a6135";
-const DOWNLOAD_RETRIES: usize = 5;
-const DELAY_BASE_MS: u64 = 500;
+// use dirs::home_dir;
+// use eyre::{bail, eyre, Result};
+// use indicatif::{ProgressBar, ProgressStyle};
+// use reqwest::Client;
 
-/// Installs the toolchain if it is not already
-pub fn install_toolchain() -> Result<()> {
-    if has_toolchain() {
-        return Ok(());
-    }
+// const TOOLCHAIN_TAG: &str = "nightly-3c5f0ec3f4f98a2d211061a83bade8d62c6a6135";
+// const DOWNLOAD_RETRIES: usize = 5;
+// const DELAY_BASE_MS: u64 = 500;
 
-    let client = Client::builder().user_agent("Mozilla/5.0").build()?;
-    let toolchain_url = toolchain_url();
+// /// Installs the toolchain if it is not already
+// pub fn install_toolchain() -> Result<()> {
+//     if has_toolchain() {
+//         return Ok(());
+//     }
 
-    let rt = Runtime::new().unwrap();
-    rt.block_on(retry_times(DOWNLOAD_RETRIES, DELAY_BASE_MS, || {
-        download_toolchain(&client, &toolchain_url)
-    }))?;
-    unpack_toolchain()?;
-    link_toolchain()?;
+//     let client = Client::builder().user_agent("Mozilla/5.0").build()?;
+//     let toolchain_url = toolchain_url();
 
-    write_tag_file()
-}
+//     let rt = Runtime::new().unwrap();
+//     rt.block_on(retry_times(DOWNLOAD_RETRIES, DELAY_BASE_MS, || {
+//         download_toolchain(&client, &toolchain_url)
+//     }))?;
+//     unpack_toolchain()?;
+//     link_toolchain()?;
 
-async fn retry_times<F, T, E>(times: usize, base_ms: u64, f: F) -> Result<T>
-where
-    F: Fn() -> E,
-    E: Future<Output = Result<T>>,
-{
-    for i in 0..times {
-        println!("Attempt {}/{}", i + 1, times);
-        match f().await {
-            Ok(t) => return Ok(t),
-            Err(e) => {
-                let timeout = delay_timeout(i, base_ms);
-                println!("Toolchain download error {i}/{times}: {e}. Retrying in {timeout}ms");
-                tokio::time::sleep(std::time::Duration::from_millis(timeout)).await;
-            }
-        }
-    }
-    Err(eyre!("failed after {} retries", times))
-}
+//     write_tag_file()
+// }
 
-fn delay_timeout(i: usize, base_ms: u64) -> u64 {
-    let timeout = 2u64.pow(i as u32) * base_ms;
-    rand::random::<u64>() % timeout
-}
+// async fn retry_times<F, T, E>(times: usize, base_ms: u64, f: F) -> Result<T>
+// where
+//     F: Fn() -> E,
+//     E: Future<Output = Result<T>>,
+// {
+//     for i in 0..times {
+//         println!("Attempt {}/{}", i + 1, times);
+//         match f().await {
+//             Ok(t) => return Ok(t),
+//             Err(e) => {
+//                 let timeout = delay_timeout(i, base_ms);
+//                 println!("Toolchain download error {i}/{times}: {e}. Retrying in {timeout}ms");
+//                 tokio::time::sleep(std::time::Duration::from_millis(timeout)).await;
+//             }
+//         }
+//     }
+//     Err(eyre!("failed after {} retries", times))
+// }
 
-fn write_tag_file() -> Result<()> {
-    let tag_path = toolchain_tag_file();
-    let mut tag_file = File::create(tag_path)?;
-    tag_file.write_all(TOOLCHAIN_TAG.as_bytes())?;
-    Ok(())
-}
+// fn delay_timeout(i: usize, base_ms: u64) -> u64 {
+//     let timeout = 2u64.pow(i as u32) * base_ms;
+//     rand::random::<u64>() % timeout
+// }
 
-fn link_toolchain() -> Result<()> {
-    let link_path = jolt_dir().join("rust/build/host/stage2");
-    let output = std::process::Command::new("rustup")
-        .args([
-            "toolchain",
-            "link",
-            "riscv32i-jolt-zkvm-elf",
-            link_path.to_str().unwrap(),
-        ])
-        .output()?;
+// fn write_tag_file() -> Result<()> {
+//     let tag_path = toolchain_tag_file();
+//     let mut tag_file = File::create(tag_path)?;
+//     tag_file.write_all(TOOLCHAIN_TAG.as_bytes())?;
+//     Ok(())
+// }
 
-    if !output.status.success() {
-        bail!("{}", String::from_utf8(output.stderr)?);
-    }
+// fn link_toolchain() -> Result<()> {
+//     let link_path = jolt_dir().join("rust/build/host/stage2");
+//     let output = std::process::Command::new("rustup")
+//         .args([
+//             "toolchain",
+//             "link",
+//             "riscv32i-jolt-zkvm-elf",
+//             link_path.to_str().unwrap(),
+//         ])
+//         .output()?;
 
-    Ok(())
-}
+//     if !output.status.success() {
+//         bail!("{}", String::from_utf8(output.stderr)?);
+//     }
 
-fn unpack_toolchain() -> Result<()> {
-    let output = std::process::Command::new("tar")
-        .args(["-xzf", "rust-toolchain.tar.gz"])
-        .current_dir(jolt_dir())
-        .output()?;
+//     Ok(())
+// }
 
-    if !output.status.success() {
-        bail!("{}", String::from_utf8(output.stderr)?);
-    }
+// fn unpack_toolchain() -> Result<()> {
+//     let output = std::process::Command::new("tar")
+//         .args(["-xzf", "rust-toolchain.tar.gz"])
+//         .current_dir(jolt_dir())
+//         .output()?;
 
-    Ok(())
-}
+//     if !output.status.success() {
+//         bail!("{}", String::from_utf8(output.stderr)?);
+//     }
 
-async fn download_toolchain(client: &Client, url: &str) -> Result<()> {
-    let jolt_dir = jolt_dir();
-    let output_path = jolt_dir.join("rust-toolchain.tar.gz");
-    if !jolt_dir.exists() {
-        fs::create_dir(&jolt_dir)?;
-    }
+//     Ok(())
+// }
 
-    println!("Downloading toolchain");
-    let mut response = client.get(url).send().await?;
-    if response.status().is_success() {
-        let mut file = File::create(output_path)?;
-        let total_size = response.content_length().unwrap_or(0);
+// async fn download_toolchain(client: &Client, url: &str) -> Result<()> {
+//     let jolt_dir = jolt_dir();
+//     let output_path = jolt_dir.join("rust-toolchain.tar.gz");
+//     if !jolt_dir.exists() {
+//         fs::create_dir(&jolt_dir)?;
+//     }
 
-        let pb = ProgressBar::new(total_size);
-        pb.set_style(
-            ProgressStyle::default_bar()
-                .template("[{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")?
-                .progress_chars("#>-"),
-        );
+//     println!("Downloading toolchain");
+//     let mut response = client.get(url).send().await?;
+//     if response.status().is_success() {
+//         let mut file = File::create(output_path)?;
+//         let total_size = response.content_length().unwrap_or(0);
 
-        let mut downloaded: u64 = 0;
-        while let Some(chunk) = response.chunk().await.unwrap() {
-            file.write_all(&chunk)?;
-            let new = downloaded + (chunk.len() as u64);
-            pb.set_position(new);
-            downloaded = new;
-        }
+//         let pb = ProgressBar::new(total_size);
+//         pb.set_style(
+//             ProgressStyle::default_bar()
+//                 .template("[{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")?
+//                 .progress_chars("#>-"),
+//         );
 
-        pb.finish_with_message("Download complete");
+//         let mut downloaded: u64 = 0;
+//         while let Some(chunk) = response.chunk().await.unwrap() {
+//             file.write_all(&chunk)?;
+//             let new = downloaded + (chunk.len() as u64);
+//             pb.set_position(new);
+//             downloaded = new;
+//         }
 
-        Ok(())
-    } else {
-        Err(eyre!("failed to download toolchain"))
-    }
-}
+//         pb.finish_with_message("Download complete");
 
-fn toolchain_url() -> String {
-    let target = target_lexicon::HOST;
-    format!(
-        "https://github.com/a16z/rust/releases/download/{}/rust-toolchain-{}.tar.gz",
-        TOOLCHAIN_TAG, target,
-    )
-}
+//         Ok(())
+//     } else {
+//         Err(eyre!("failed to download toolchain"))
+//     }
+// }
 
-fn has_toolchain() -> bool {
-    let tag_path = toolchain_tag_file();
-    if let Ok(tag) = read_to_string(tag_path) {
-        tag == TOOLCHAIN_TAG
-    } else {
-        false
-    }
-}
+// fn toolchain_url() -> String {
+//     let target = target_lexicon::HOST;
+//     format!(
+//         "https://github.com/a16z/rust/releases/download/{}/rust-toolchain-{}.tar.gz",
+//         TOOLCHAIN_TAG, target,
+//     )
+// }
 
-fn jolt_dir() -> PathBuf {
-    home_dir().unwrap().join(".jolt")
-}
+// fn has_toolchain() -> bool {
+//     let tag_path = toolchain_tag_file();
+//     if let Ok(tag) = read_to_string(tag_path) {
+//         tag == TOOLCHAIN_TAG
+//     } else {
+//         false
+//     }
+// }
 
-fn toolchain_tag_file() -> PathBuf {
-    jolt_dir().join(".toolchaintag")
-}
+// fn jolt_dir() -> PathBuf {
+//     home_dir().unwrap().join(".jolt")
+// }
+
+// fn toolchain_tag_file() -> PathBuf {
+//     jolt_dir().join(".toolchaintag")
+// }

@@ -30,7 +30,7 @@ use crate::{
     utils::thread::unsafe_allocate_zero_vec,
 };
 
-use self::{analyze::ProgramSummary, toolchain::install_toolchain};
+use self::analyze::ProgramSummary;
 
 pub mod analyze;
 pub mod toolchain;
@@ -95,7 +95,7 @@ impl Program {
     #[tracing::instrument(skip_all, name = "Program::build")]
     pub fn build(&mut self) {
         if self.elf.is_none() {
-            install_toolchain().unwrap();
+            // install_toolchain().unwrap();
             self.save_linker();
 
             let rust_flags = [
